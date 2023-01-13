@@ -29,7 +29,7 @@ function MintingPlatform() {
                     <h3 className='text-md text-center text-emerald-500'> Current wallet in use: {walletAddress.substr(0,6)} ... {walletAddress.substr(36,6)}</h3>
                 )}
                 <div className='mt-9 flex flex-col items-center space-y-3 mb-20 text-center lg:mt-40'>
-                    <img className='w-96 object-cover pb-10 lg:h-33' src='/main.png' alt='' />
+                    <img className='w-96 object-cover pb-10 lg:h-33' src='/Main.jpg' alt='' />
 
                     <h2 className='text-2xl font-bold lg:text-3xl lg:font-extrabold'>
                         Merlion NFT fountain collection  <span className='font-extralight'>- Exclusive</span>
