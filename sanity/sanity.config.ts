@@ -7,7 +7,7 @@ export default defineConfig({
   name: 'default',
   title: 'Mega Verse',
 
-  projectId: '2hsj1o19',
+  projectId: '9a8ni1f0',
   dataset: 'production',
 
   plugins: [deskTool(), visionTool()],
