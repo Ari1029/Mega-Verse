@@ -1,9 +1,10 @@
-import React from 'react'
-import { useAddress, useMetamask, useDisconnect } from '@thirdweb-dev/react';
+import React, { useEffect, useState } from 'react'
+import { useAddress, useMetamask, useDisconnect, useContract} from '@thirdweb-dev/react';
 import { GetServerSideProps } from 'next';
 import { sanityClient, urlFor } from '../../sanity';
 import { Collection } from '../../typings';
 import Link from 'next/link';
+import { BigNumber } from 'ethers';
 
 interface Props{
     collection: Collection
@@ -19,6 +20,56 @@ function merlionFountain({collection}: Props) {
         connectMetamask();
     }
 
+    const [claimedSupply, setClaimedSupply] = useState<number>(0);
+    const [totalSupply, setTotalSupply] = useState<BigNumber>();
+    const nftDrop = useContract(collection.address, "nft-drop").contract;
+    const [load,setLoad] = useState(true);
+
+    const mint = async()=>{
+        if(!nftDrop || !walletAddress) return;
+        setLoad(true);
+        nftDrop.claimTo(walletAddress, 1)
+        .then(async(tx)=>{
+            const claimedTokenId = tx[0].id;
+            const claimedNFT = await tx[0].data();
+            const receipt = tx[0].receipt;
+            console.log(claimedTokenId);
+            console.log(claimedNFT);
+            console.log(receipt);
+        })
+        .catch(err=>{
+            console.log(err);
+        })
+        .finally(()=>{
+            setLoad(false);
+        })
+    }
+
+    useEffect(()=>{
+        setLoad(true);
+        if(!nftDrop) return;
+        const collectionData = async()=>{
+            const nftClaimed = await nftDrop.getAllClaimed();
+            const nftTotal = await nftDrop.totalSupply();
+
+            setClaimedSupply(nftClaimed.length);
+            setTotalSupply(nftTotal);
+            setLoad(false);
+        }
+        collectionData();
+    }, [nftDrop])
+
+    const [price, setPrice] = useState<string>();
+    useEffect(()=>{
+        if(!nftDrop) return;
+        const getPrice = async()=>{
+            const conditions = await nftDrop.claimConditions.getAll();
+            setPrice(conditions?.[0].currencyMetadata.displayValue)
+        }
+        getPrice();
+    }, [nftDrop])
+
+    
     return (
         <div className='lg:grid lg:grid-cols-11 flex h-screen flex-col'>
             <div className='lg:col-span-7'>
@@ -44,11 +95,25 @@ function merlionFountain({collection}: Props) {
                     <h2 className='text-2xl font-bold lg:text-3xl lg:font-extrabold'>
                         {collection.title}
                     </h2 >
-                    <p className='p-1 mt-5 text-xl text-blue-800'></p>
+                    {load ? (
+                        <div>
+                        <p className='text-blue-800 p-1 mt-5 text-md animate-pulse'>Loading NFT supply ...
+                        </p>
+                        <img className='h-16 object-contain' src='https://wpamelia.com/wp-content/uploads/2018/11/ezgif-2-6d0b072c3d3f.gif'></img>
+                        </div>
+                    ): (
+                        <p className='p-1 mt-5 text-lg text-blue-800'>Claimed: {claimedSupply} / {totalSupply?.toString()} NFT's</p>
+                    )}
                 </div>
                 <div className='flex flex-row justify-center items-start'>
-                <button className='text-l px-3 h-14 w-65 rounded-full mb-6 bg-purple-500 text-blue-100'>
-                    Mint from Mega Verse (0.01 ETH)
+                <button onClick = {mint} disabled = {load || claimedSupply === totalSupply?.toNumber() || !walletAddress} className='text-l px-3 h-14 w-65 rounded-full mb-6 bg-purple-500 text-indigo-100 disabled:bg-slate-400'>
+                    {load ? (
+                        <>Please wait</>
+                    ): claimedSupply === totalSupply?.toNumber() ? (
+                        <>NFT Sold out</>
+                    ):(
+                        <span className='font-bold'>Mint from Mega Verse ({price} ETH)</span>
+                    )}
                 </button>
                 </div>
 
